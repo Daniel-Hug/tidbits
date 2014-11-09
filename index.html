@@ -1,0 +1,1437 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>HTML5, CSS3, and Javascript Tidbits</title>
+	<link rel="icon" href="http://f.cl.ly/items/2R452q1t2V1R0E3i0W3h/HTML5.ico" type="image/ico">
+	<link href='http://fonts.googleapis.com/css?family=Norican' rel='stylesheet'>
+	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="libs/prism/prism.css">
+</head>
+<body>
+	<header>
+		<hgroup>
+			<h1><a href="#HTML5">HTML5</a>, <a href="#CSS3">CSS3</a>, and <a href="#Javascript">Javascript</a> Tidbits</h1>
+			<a href="http://hugwebdesign.com" id="me">Design by Daniel</a>
+		</hgroup>
+	</header>
+
+<!--
+    Escape HTML entities: http://jsbin.com/entity/quiet
+-->
+
+	<section id="articles"><b id="HTML5"></b><b id="CSS3"></b><b id="Javascript"></b>
+
+		<article class="Javascript">
+			<h2>JS helper functions</h2>
+			<pre><code class="language-javascript">// Easy looping:
+function each(arr, fn, scope, args) {
+	for (var i = 0, l = arr.length; i &lt; l; i++) {
+		if (args) fn.apply([arr[i]].concat(args));
+		else fn.call(scope, arr[i], i, arr);
+	}
+}
+
+// Get elements by CSS selector:
+function qs(selector, scope) {
+	return (scope || document).querySelector(selector);
+}
+function qsa(selector, scope) {
+	return (scope || document).querySelectorAll(selector);
+}
+
+// addEventListener wrapper:
+function on(target, type, callback) {
+	if (target.length) each(target, function(target) {
+		on(target, type, callback);
+	});
+	else target.addEventListener(type, callback, false);
+}</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Loop through objects with <code>forIn</code></h2>
+			<pre><code class="language-javascript">// Loop through objects:
+function forIn(obj, callback, context) {
+	for (var key in obj) {
+		callback.call(context, obj[key], key, obj);
+	}
+}</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Force <code>new</code> operator on constructor</h2>
+			<pre><code class="language-javascript">var Constructor = function(arg1, arg2) {
+	if (!(this instanceof Constructor)) return new Constructor(arg1, arg2);
+	// Do what constructors do.
+};</code></pre>
+		<p>From <a href="http://ejohn.org/apps/learn/#36">John Resig's advanced javascript learning app</a></p>
+		</article>
+
+		<article class="Javascript CSS3">
+			<h2>Trigger repaint</h2>
+			<pre><code class="language-javascript">document.body.removeChild(document.body.appendChild(document.createElement('style')));</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Fast simple DOM templating</h2>
+			<pre><code class="language-javascript">// Templating:
+var tmp = {};
+(function(open, close) {
+	$$('script[type=tmp]').forEach(function(el) {
+		var src = el.innerHTML;
+		tmp[el.id] = function(data) {
+			var result = src,
+				key;
+			for (key in data) {
+				result = result.split(open + key + close).join(data[key]);
+			}
+			return result;
+		};
+	});
+})('{{', '}}');</code></pre>
+		<p>Requires the <a href="#p19">bling-bling function</a></p>
+		<p><b>Create a template</b></p>
+		<pre><code class="language-markup">&lt;script type="tmp" id="transaction"&gt;
+	&lt;td&gt;{{title}}&lt;/td&gt;
+	&lt;td&gt;{{amount}}&lt;/td&gt;
+	&lt;td title="{{date}}"&gt;{{relativeDate}}&lt;/td&gt;
+&lt;/script&gt;</code></pre>
+		<p><b>Add data</b></p>
+		<pre><code class="language-javascript">tr.innerHTML = tmp.transaction(data);</code></pre>
+		</article>
+		<article class="Javascript">
+			<h2>Blur page with keyboard shortcut</h2>
+			<pre><code class="language-javascript">(function(style, blurred) {
+	window.addEventListener('keypress', function(event) {
+		if (event.keyCode !== 98) return;
+		if (blurred) {
+			style.webkitFilter = 'blur(0)';
+			blurred = false;
+		} else {
+			style.webkitFilter = 'blur(20px)';
+			blurred = true;
+		}
+	});
+})(document.documentElement.style);</code></pre>
+			<p>Press <kbd>b</kbd> to toggle the page blur.</p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Get the start of a unit in a JS Date object</h2>
+			<h3>Using <code>do</code>…<code>while</code></h3>
+			<pre><code class="language-javascript">Date.prototype.startOf = function(unit) {
+	var clone = new Date(this.getTime()), day;
+	/* */if (unit === 'second') clone.setMilliseconds(0);
+	else if (unit === 'minute') clone.setSeconds(0,0);
+	else if (unit === 'hour'  ) clone.setMinutes(0,0,0);
+	else {
+		clone.setHours(0,0,0,0);
+		if (unit === 'week') {
+			day = clone.getDay();
+			clone = day ? new Date(clone - 1000 * 60 * 60 * 24 * day) : clone;
+		}
+		else if (unit === 'month') clone.setDate(1);
+		else if (unit === 'year' ) clone.setMonth(0,1);
+	}
+	return clone;
+};</code></pre>
+			<h3>Usage</h3>
+			<pre><code class="language-javascript"><script type="echo">+new Date().startOf('second')</script>
+<script type="echo">new Date().startOf('minute')</script>
+<script type="echo">new Date().startOf('hour')</script>
+<script type="echo">new Date().startOf('day')</script>
+<script type="echo">new Date().startOf('week')</script>
+<script type="echo">new Date().startOf('month')</script>
+<script type="echo">new Date().startOf('year')</script></code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>JS do…while shortcut</h2>
+			<h3>Using <code>do</code>…<code>while</code></h3>
+			<pre><code class="language-javascript">do expression;
+while (condition);</code></pre>
+			<h3>Using shortcut</h3>
+			<pre><code class="language-javascript">while (expression, condition);</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Cool math constants as JS variables</h2>
+			<pre><code class="language-javascript">var π = Math.PI; // 3.141592653589793
+var τ = Math.PI * 2; // 6.283185307179586
+var Φ = (1 + Math.sqrt(5)) / 2; // 1.618033988749895
+var ∞ = Infinity; // Syntax error</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2><code>localStorage</code> wrapper / helper functions</h2>
+			<pre><code class="language-javascript">// localStorage wrapper:
+var storage = {
+	get: function(prop) {
+		return JSON.parse(localStorage.getItem(prop));
+	},
+	set: function(prop, val) {
+		localStorage.setItem(prop, JSON.stringify(val));
+	},
+	has: function(prop) {
+		return localStorage.hasOwnProperty(prop);
+	},
+	remove: function(prop) {
+		localStorage.removeItem(prop);
+	},
+	clear: function() {
+		localStorage.clear();
+	}
+};</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Prevent spacing between inline-block elements</h2>
+			<pre><code class="language-css">.grid {
+    letter-spacing: -0.31em; /* Webkit: collapse white-space between units */
+    *letter-spacing: normal; /* reset IE &lt; 8 */
+    *word-spacing: -0.43em; /* IE &lt; 8: collapse white-space between units */
+    text-rendering: optimizespeed; /* Webkit: fixes text-rendering: optimizeLegibility */
+}
+
+/* Opera as of 12 on Windows needs word-spacing.
+   The ".opera-only" selector is used to prevent actual prefocus styling
+   and is not required in markup.
+*/
+.opera-only :-o-prefocus,
+.grid {
+    word-spacing: -0.43em;
+}
+
+.grid-unit {
+    display: inline-block;
+    *display: inline; /* IE &lt; 8: fake inline-block */
+    zoom: 1;
+    letter-spacing: normal;
+    word-spacing: normal;
+    vertical-align: top;
+    text-rendering: auto;
+}</code></pre>
+
+			<h3>Usage</h3>
+			<pre><code class="language-markup">&lt;ul class="grid"&gt;
+	&lt;li class="grid-unit"&gt;&lt;/li&gt;
+	&lt;li class="grid-unit"&gt;&lt;/li&gt;
+	&lt;li class="grid-unit"&gt;&lt;/li&gt;
+	&lt;li class="grid-unit"&gt;&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+			<p>This ingenious <code>inline-block</code> technique is borrowed from
+				<a href="http://yuilibrary.com/">YUI</a>'s
+				<a href="http://purecss.io/">Pure</a>
+				<a href="http://purecss.io/grids/">Grids</a>
+				<a href="https://github.com/yui/pure/blob/master/src/grids/css/grids-core.css">core module</a>.
+				Chris coyier shows a few more techniques in an article: <a href="http://css-tricks.com/fighting-the-space-between-inline-block-elements/">Fighting the Space Between Inline Block Elements</a>
+			</p>
+		</article>
+
+		<article class="Javascript">
+			<h2>"Throttle" function calls with a debounce function</h2>
+			<pre><code class="language-javascript">function debounce(fn, delay, timer) {
+	delay = delay || 150;
+	return function() {
+		var args = arguments,
+			context = this;
+		clearTimeout(timer);
+		timer = setTimeout(function() {
+			fn.apply(context, args);
+		}, delay);
+	};
+}</code></pre>
+
+			<h3>Usage</h3>
+			<pre><code class="language-javascript">window.addEventListener('resize', debounce(redrawGraph), false);</code></pre>
+			<p>This is a <i>slightly</i> modified version of <a href="http://remysharp.com/2010/07/21/throttling-function-calls/">Remy Sharp's</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Tabbed panels</h2>
+			<pre><code class="language-javascript">// Tabbed Panels
+$$('.tabbed-panels').forEach(function(parent) {
+	var tabs = $$('.tab', parent);
+	var panels = $$('.panel', parent);
+	var closeable = parent.classList.contains('closeable');
+	tabs.forEach(function(tab, i) {
+		tab.addEventListener('click', function() {
+			tabs.forEach(function(tab) {
+				if (tab != this) tab.classList.remove('active');
+			}, this);
+
+			if (closeable) {
+				var isActive = this.classList.toggle('active');
+				parent.classList[isActive ? 'add' : 'remove']('active');
+			} else {
+				this.classList.add('active');
+				parent.classList.add('active');
+			}
+
+			panels.forEach(function(panel, j) {
+				panel.classList[j === i ? (closeable ? 'toggle' : 'add') : 'remove']('active');
+			});
+		});
+	});
+});</code></pre>
+
+			<h3>Demos:</h3>
+			<ul>
+				<li><a href="http://jsbin.com/owazuh/3/edit">http://jsbin.com/owazuh/3/edit</a></li>
+				<li><a href="http://jsbin.com/ekuvib/1/edit">http://jsbin.com/ekuvib/1/edit</a></li>
+			</ul>
+		</article>
+
+		<article class="Javascript">
+			<h2><code>Array#map</code> polyfill</h2>
+			<pre><code class="language-javascript">// Array#map polyfill:
+if(![].map)Array.prototype.map=function(a,s){for(var b=this,c=b.length,d=[],e=0,f;e&lt;b;)d[e]=e in b?a.call(s,b[e],e++,b):f;return d};</code></pre>
+
+			<p>Slightly modified version of this one: <a href="https://gist.github.com/jed/1031568">https://gist.github.com/jed/1031568</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Modular width classes (for those who hate media queries)</h2>
+			<pre><code class="language-javascript">(function(window) { // modular width classes:
+	'use strict';
+
+	var document = window.document;
+	var gtEls = [].slice.call(document.querySelectorAll('[data-gt]'));
+	var ltEls = [].slice.call(document.querySelectorAll('[data-lt]'));
+	var gt = gtEls.map(function(el) {
+		return el.getAttribute('data-gt').split(' ').map(Number);
+	});
+	var lt = ltEls.map(function(el) {
+		return el.getAttribute('data-lt').split(' ').map(Number);
+	});
+
+	function resizer() {
+		gtEls.forEach(function(el, i) {
+			var w = el.offsetWidth;
+			gt[i].forEach(function(bp) {
+				el.classList[(w > bp) ? 'add' : 'remove']('gt' + bp);
+			});
+		});
+		ltEls.forEach(function(el, i) {
+			var w = el.offsetWidth;
+			lt[i].forEach(function(bp) {
+				el.classList[(w &lt; bp) ? 'add' : 'remove']('lt' + bp);
+			});
+		});
+	}
+
+	resizer();
+	window[window.addEventListener ? 'addEventListener' : 'attachEvent']('resize', resizer, false);
+})(window);</code></pre>
+
+			<h3>Example</h3>
+			<h4>HTML</h4>
+			<pre><code class="language-markup">&lt;div class="banner" data-gt="360 720">&lt;/div></code></pre>
+			<h4>CSS</h4>
+			<pre><code class="language-css">
+.banner       { font-size: 18px }
+.banner.gt360 { font-size: 24px }
+.banner.gt720 { font-size: 36px }</code></pre>
+
+			<p><b>Note:</b> This relies on <code>Array.forEach</code> and <code>Array.map</code>.</p>
+		</article>
+
+		<article class="Javascript">
+			<h2><code>Function#bind</code> polyfill</h2>
+			<pre><code class="language-javascript">// Function#bind polyfill:
+if(!open.bind)Function.prototype.bind=function(b){function c(){return d.apply(this instanceof a&amp;&amp;b?this:b,e.concat([].slice.call(arguments)))}function a(){}var e=[].slice.call(arguments,1),d=this;a.prototype=this.prototype;c.prototype=new a;return c};</code></pre>
+
+			<p>Modified version of the one on MDN: <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/bind#Compatibility">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Function/bind#Compatibility</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>camelCase a string with JS</h2>
+			<pre><code class="language-javascript">// Capitalize string:
+function capitalize(str) {
+	return str[0].toUpperCase() + str.slice(1);
+}
+
+// camelCase string
+function camelcase(str) {
+    var pieces = str.split('-');
+    for (var i = 1, l = pieces.length; i &lt; l; i++) pieces[i] = capitalize(pieces[i]);
+    return pieces.join('');
+}</code></pre>
+
+			<p>Uses the <a href="file:///C:/Users/Daniel/Google%20Drive/HTML5,%20CSS3,%20and%20Javascript%20tidbits/index.html#p28">capitalize function</a>.</p>
+		</article>
+
+		<article class="Javascript">
+			<h2><code>Array#forEach</code> polyfill</h2>
+			<pre><code class="language-javascript">// Array#forEach polyfill:
+if (![].forEach) Array.prototype.forEach = function(fn, scope) {
+	for (var i = 0, l = this.length; i &lt; l; i++) {
+		fn.call(scope, this[i], i, this);
+	}
+};</code></pre>
+
+			<ul>
+				<li>forEach on MDN: <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/forEach">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/forEach</a></li>
+			</ul>
+		</article>
+
+		<article class="CSS3">
+			<h2>CSS text wrapping properties</h2>
+			<p>Here's a good Impressive Webs article on the subject: <a href="http://www.impressivewebs.com/new-css3-text-wrap/">http://www.impressivewebs.com/new-css3-text-wrap/</a></p>
+			<ul class="no-bullets">
+				<li>
+					<details>
+						<summary><h3 class="inline"><code>word-wrap</code></h3></summary>
+						<div class="indent">
+							<h4>Values:</h4>
+							<ul>
+								<li>normal</li>
+								<li>break-word</li>
+							</ul>
+							<h4>Browser support:</h4>
+							<ul>
+								<li>Chrome 1+</li>
+								<li>IE 5.5+</li>
+								<li>FF 3.5+</li>
+								<li>Opera 10.5+</li>
+								<li>Safari 1+</li>
+							</ul>
+							<h4>Links:</h4>
+							<ul>
+								<li>MDN Reference: <a href="https://developer.mozilla.org/en-US/docs/CSS/word-wrap">https://developer.mozilla.org/en-US/docs/CSS/word-wrap</a></li>
+							</ul>
+						</div>
+					</details>
+				</li>
+				<li>
+					<details>
+						<summary><h3 class="inline"><code>white-space</code></h3></summary>
+						<div class="indent">
+							<h4>Values:</h4>
+							<ul>
+								<li>normal</li>
+								<li>nowrap</li>
+								<li>pre</li>
+								<li>pre-wrap</li>
+								<li>pre-line</li>
+							</ul>
+							<h4>Browser support: <a href="https://developer.mozilla.org/en-US/docs/CSS/white-space#Browser_compatibility">it's complicated but good</a></h4>
+							<h4>Links:</h4>
+							<ul>
+								<li>MDN Reference: <a href="https://developer.mozilla.org/en-US/docs/CSS/white-space">https://developer.mozilla.org/en-US/docs/CSS/white-space</a></li>
+								<li>Impressive Webs article: <a href="http://www.impressivewebs.com/css-white-space/">http://www.impressivewebs.com/css-white-space/</a></li>
+							</ul>
+						</div>
+					</details>
+				</li>
+				<li><h3><code>text-wrap</code></h3></li>
+				<li><h3><code>text-overflow</code></h3></li>
+				<li><h3><code>hyphens</code></h3></li>
+			</ul>
+		</article>
+
+
+
+
+		<article class="Javascript">
+			<h2><code>toType</code> function (a <code>typeof</code> alternative)</h2>
+			<pre><code class="language-javascript">function toType(obj) {
+	return ({}).toString.call(obj).slice(8,-1).toLowerCase();
+}</code></pre>
+			<h3>Use:</h3>
+			<pre><code class="language-javascript">toType(1) //--&gt; "number"</code></pre>
+
+			<ul>
+				<li>Article: <a href="http://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/">http://javascriptweblog.wordpress.com/2011/08/08/fixing-the-javascript-typeof-operator/</a></li>
+				<li>JSPerf: <a href="http://jsperf.com/to-type-variations">http://jsperf.com/to-type-variations</a></li>
+			</ul>
+		</article>
+
+
+
+
+
+
+
+
+
+
+		<article class="Javascript">
+			<h2>Get function parameters &amp; arguments as an object</h2>
+			<pre><code class="language-javascript">/*
+	returns an object with the parameter / argument
+	pairs of the currently executing function.
+*/
+
+function getNamedArgsObj() {
+	var fn = arguments.callee.caller;
+	var s = fn.toString().split('(')[1], obj = {};
+	s.split(')')[0].split(',').forEach(function(param, i) {
+		obj[param.trim()] = fn.arguments[i];
+	});
+	return obj;
+}</code></pre>
+			<h3>Use:</h3>
+			<pre><code class="language-javascript">function say(message){
+	console.log(getNamedArgsObj().message);
+}
+
+say('Hi!');</code></pre>
+
+
+			<p>JS Bin Demo: <a href="http://jsbin.com/ugejac/1/edit?javascript,console,live">http://jsbin.com/ugejac/1/edit?javascript,console,live</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>An <code>Object.keys()</code> polyfill for IE&lt;9</h2>
+			<h3>Minified</h3>
+			<pre><code class="language-javascript">Object.keys=Object.keys||function(o,k,r){r=[];for(k in o)o.hasOwnProperty(k)&amp;&amp;r.push(k);return r}</code></pre>
+			<h3>Maxified</h3>
+			<pre><code class="language-javascript">Object.keys = Object.keys || function(obj) {
+	var ret = [];
+	for (var key in obj) {
+		if (obj.hasOwnProperty(key)) ret.push(key);
+	}
+	return ret;
+};</code></pre>
+			<h3>Usage</h3>
+			<pre><code class="language-javascript">Object.keys({name:'bob'}) //--> ['name']</code></pre>
+
+			<ul>
+				<li>GitHub thread: <a href="https://gist.github.com/atk/1034464">https://gist.github.com/atk/1034464</a></li>
+				<li><code>Object.keys</code> on MDN: <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/isArray">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object/keys</a></li>
+			</ul>
+		</article>
+
+		<article class="Javascript">
+			<h2>Is it an array? An <code>Array.isArray()</code> polyfill</h2>
+			<h3>Simple usage:</h3>
+			<pre><code class="language-javascript">if( Array.isArray([]) )  // do stuff.</code></pre>
+			<h3>Polyfill for IE&lt;9:</h3>
+			<pre><code class="language-javascript">// Array.isArray() polyfill for IE&lt;9:
+Array.isArray = Array.isArray || function (arg) {
+	return Object.prototype.toString.call(arg) === "[object Array]";
+};</code></pre>
+
+			<p>On MDN: <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/isArray">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/isArray</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Get timestamp with <code>Date.now()</code> (polyfill included)</h2>
+			<h3>Simple usage:</h3>
+			<pre><code class="language-javascript">var timestampMS = Date.now();</code></pre>
+			<h3>Polyfill for IE&lt;9:</h3>
+			<pre><code class="language-javascript">// Date.now() polyfill for IE&lt;9:
+Date.now = Date.now || function() {
+	return new Date().getTime();
+};</code></pre>
+
+			<ul>
+				<li>JS Bin Demo: <a href="http://jsbin.com/evekeh/1/edit#javascript,console">http://jsbin.com/evekeh/1/edit#javascript,console</a></li>
+				<li>MDN Reference: <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Date/now">https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Date/now</a></li>
+				<li>Benchmark test on jsPerf: <a href="http://jsperf.com/date-now-vs-new-date-gettime/4">http://jsperf.com/date-now-vs-new-date-gettime/4</a></li>
+				<li>On Stackoverflow: <a href="http://stackoverflow.com/questions/221294/how-do-you-get-a-timestamp-in-javascript">http://stackoverflow.com/questions/221294/how-do-you-get-a-timestamp-in-javascript</a></li>
+			</ul>
+		</article>
+
+		<article class="Javascript">
+			<h2>Fast, cross-browser NodeList to Array</h2>
+			<pre><code class="language-javascript">// Array-like object to Array:
+function toArray(o) {
+	for (var a=[], l=o.length; l--;) a[l]=o[l];
+	return a;
+}</code></pre>
+
+			<p><a href="http://stackoverflow.com/a/15286149/552067">On Stackoverflow</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>AddEventListener polyfill IE6+</h2>
+
+			<section>
+				<h3>Maxified</h3>
+				<pre><code class="language-javascript">// addEventListener polyfill 1.0 / Eirik Backer / MIT Licence
+(function(win, doc){
+	if (win.addEventListener) return;  // No need to polyfill
+
+	function docHijack(p){var old = doc[p];doc[p] = function(v){return addListen(old(v))}}
+	function addEvent(on, fn, self){
+		return (self = this).attachEvent('on' + on, function(e){
+			var e = e || win.event;
+			e.preventDefault  = e.preventDefault  || function(){e.returnValue = false}
+			e.stopPropagation = e.stopPropagation || function(){e.cancelBubble = true}
+			fn.call(self, e);
+		});
+	}
+	function addListen(obj, i){
+		if (i = obj.length) while(i--) obj[i].addEventListener = addEvent;
+		else obj.addEventListener = addEvent;
+		return obj;
+	}
+
+	addListen([doc, win]);
+	if ('Element' in win) win.Element.prototype.addEventListener = addEvent;    // IE8
+	else {                                                                      // IE &lt; 8
+		doc.attachEvent('onreadystatechange', function(){addListen(doc.all)});  // Make sure we also init at domReady
+		docHijack('getElementsByTagName');
+		docHijack('getElementById');
+		docHijack('createElement');
+		addListen(doc.all);
+	}
+})(window, document);</code></pre></section>
+
+			<section>
+				<h3>Minified</h3>
+				<pre><code class="language-javascript">// addEventListener polyfill:
+(function(c,b){function e(a){var f=b[a];b[a]=function(a){return d(f(a))}}function g(a,f,b){return(b=this).attachEvent("on"+a,function(a){a=a||c.event;a.preventDefault=a.preventDefault||function(){a.returnValue=!1};a.stopPropagation=a.stopPropagation||function(){a.cancelBubble=!0};f.call(b,a)})}function d(a,b){if(b=a.length)for(;b--;)a[b].addEventListener=g;else a.addEventListener=g;return a}c.addEventListener||(d([b,c]),"Element"in c?c.Element.prototype.addEventListener=g:(b.attachEvent("onreadystatechange",function(){d(b.all)}),e("getElementsByTagName"),e("getElementById"),e("createElement"),d(b.all)))})(window,document);</code></pre></section>
+
+			<p>Source: <a href="https://gist.github.com/eirikbacker/2864711">https://gist.github.com/eirikbacker/2864711</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Handlebars Template object</h2>
+
+			<h3>Include Handlebars.js</h3>
+			<pre><code class="language-markup">&lt;script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0-rc.3/handlebars.min.js"&gt;&lt;/script&gt;</code></pre>
+
+			<h3>Templating object</h3>
+			<pre><code class="language-javascript">/* Template object:
+------------------------------------------*/
+
+var Template = function(el) {
+	this.tmpl = Handlebars.compile(el.innerHTML);
+};
+
+Template.prototype.data = function(params) {
+	var div = document.createElement('div');
+	var frag = document.createDocumentFragment();
+	div.innerHTML = this.tmpl(params);
+
+	while (div.hasChildNodes()) {
+		frag.appendChild(div.firstChild);
+	}
+
+	return frag;
+};</code></pre>
+
+			<h3>Usage</h3>
+			<p>Create a template inside a <code class="language-markup">&lt;script&gt;</code> element with its type attribute set to something obscure, and add a unique id:</p>
+			<pre><code class="language-markup">&lt;script type='template' id='event-listing-template'&gt;
+	&lt;li&gt;{{what}} is on {{when}} at the {{where}}.&lt;/li&gt;
+&lt;/script&gt;</code></pre>
+
+			<p>Then create an instance of the template object, passing the <code class="language-markup">&lt;script&gt;</code> element as the only paramater:</p>
+			<pre><code class="language-javascript">var eventTmp = new Template($('#event-listing-template'));</code></pre>
+			<p>Then add some data and append it to the DOM:</p>
+			<pre><code class="language-javascript">ul.appendChild(eventTmp.data({
+	what: 'My party',
+	when: 'Tuesday',
+	where: 'music hall'
+}));</code></pre>
+		</article>
+
+		<article class="CSS3">
+			<h2>Maintain element aspect ratio pure CSS</h2>
+
+			<h3>Reusable HTML module</h3>
+			<pre><code class="language-markup">&lt;div class="ar-wrapper"&gt;
+	&lt;div class="four-by-three ar"&gt;&lt;/div&gt;
+	&lt;div class="ar-content"&gt;
+		&lt;h1&gt;Content goes in here.&lt;/h1&gt;
+	&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+
+			<h3>CSS bits</h3>
+			<pre><code class="language-css">/* Aspect ratio (ar) classes */
+
+.ar-wrapper {
+	position: relative;
+	width: 100%; /* &lt;-- just a default, can be anything. */
+}
+
+.ar { padding-bottom: 100% }
+
+.ar-content {
+	position: absolute;
+	top: 0;  bottom: 0;  left: 0;  right: 0;
+	padding: 0 24px; /* Optional padding for content area */
+}</code></pre>
+
+			<ul>
+				<li>Stackoverflow: <a href="http://stackoverflow.com/a/10441480/552067">http://stackoverflow.com/a/10441480/552067</a></li>
+				<li>JSBin Demo: <a href="http://jsbin.com/eqeseb/8/edit">http://jsbin.com/eqeseb/8/edit</a></li>
+			</ul>
+		</article>
+
+		<article class="CSS3">
+			<h2>CSS Box class (create a visual hierarchy without the redundancy)</h2>
+			<pre><code class="language-css">.box {
+	margin: 1.5em 0;
+	.cf;
+
+	> :first-child { margin-top: 0 }
+	> :last-child { margin-bottom: 0 }
+}</code></pre>
+
+			<p>Be sure to include the <a href="#p7">clearfix</a> as well. This box class inherits those styles.</p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Get Location Query object from URL</h2>
+			<pre><code class="language-javascript">function queryObj() {
+	var obj = {}, keyValuePairs = decodeURIComponent(location.search).slice(1).split('&amp;');
+
+	keyValuePairs.forEach(function(keyValuePair) {
+		keyValuePair = keyValuePair.split('=');
+		obj[keyValuePair[0]] = keyValuePair[1] || '';
+	});
+
+	return obj;
+}</code></pre>
+
+			<h3>Usage</h3>
+			<p><code>queryObj()['search'] //--> 'pictures of cats'</code></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Trim whitespace from string polyfill</h2>
+
+			<p>Simply use the native javascript methods: <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/TrimLeft"><code>String.trimLeft()</code></a>, <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/trimRight"><code>String.trimRight()</code></a>, and <a href="https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/trim"><code>String.trim()</code></a>.</p>
+
+			<pre><code class="language-javascript">if (!''.trimLeft) {
+	String.prototype.trimLeft = function() {
+		return this.replace(/^\s+/,'');
+	};
+	String.prototype.trimRight = function() {
+		return this.replace(/\s+$/,'');
+	};
+	if (!''.trim) {
+		String.prototype.trim = function() {
+			return this.replace(/^\s+|\s+$/g, '');
+		};
+	}
+}
+
+
+'  Hello  '.trim()       //-> 'Hello'
+'  Hello  '.trimLeft()   //-> 'Hello  '
+'  Hello  '.trimRight()  //-> '  Hello'</code></pre>
+
+			<p><b>More Info:</b> <a href="http://stackoverflow.com/a/15037446/552067">http://stackoverflow.com/a/15037446/552067</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Script loader</h2>
+			<pre><code class="language-javascript">// Script loader:
+function load(lib) {
+	var el = document.createElement('script');
+	el.async = true;
+
+	switch (lib) {
+		case 'Google Analytics':
+			window._gaq = [['_setAccount','UA-38610403-1'],['_trackPageview']];
+			el.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
+			break;
+		default:
+			el.src = lib;
+	}
+
+	document.body.appendChild(el);
+}</code></pre>
+
+			<h3>Minified:</h3>
+
+			<pre><code class="language-javascript">// Script loader (minified):
+function load(b,i){var a=document.createElement("script");a.async=!0;a.src="Google Analytics"==b?((window._gaq=[["_setAccount",i],["_trackPageview"]])&amp;&amp;"https:"==location.protocol?"//ssl":"//www")+".google-analytics.com/ga.js":b;document.body.appendChild(a)};</code></pre>
+
+			<h3>Usage</h3>
+			<pre><code class="language-javascript">load('Google Analytics', 'UA-XXXXXXXX-1');
+load('//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js');</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Capitalize first letter in string</h2>
+
+			<h3>Using <code>String.prototype</code></h3>
+			<pre><code class="language-javascript">// Capitalize string:
+String.prototype.capitalize = function() {
+	return this[0].toUpperCase() + this.slice(1);
+};</code></pre>
+
+			<h3>With regular function</h3>
+			<pre><code class="language-javascript">// Capitalize string:
+function capitalize(str) {
+	return str[0].toUpperCase() + str.slice(1);
+}</code></pre>
+		</article>
+
+		<article class="CSS3">
+			<h2>CSS Text overflow elipsis</h2>
+			<pre><code class="language-css">p {
+	white-space: nowrap;
+	width: 100%;
+
+	/* "overflow" value must be different from "visible" */
+	overflow: hidden;
+
+	text-overflow: ellipsis;
+}</code></pre>
+			<p>More Info: <a href="https://developer.mozilla.org/en-US/docs/CSS/white-space">MDN Article</a></p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Generate random css hex color code</h2>
+			<pre><code class="language-javascript">function randomColor() {
+	return '#' + ('000000' + Math.floor(Math.random() * 16777216).toString(16)).substr(-6);
+}</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>Generate random integer within range</h2>
+			<pre><code class="language-javascript">// Generate random integer within range:
+function randomInt(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+var die = randomInt(1,6);</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>View Page Source - Javascript (bookmarklet)</h2>
+			<pre><code class="language-javascript">// javascript:
+(function() {
+
+// a few baseline variables:
+var d = document,
+    b = d.body,
+
+// create ajax request:
+x = new XMLHttpRequest();
+x.open('GET',d.URL,true);
+
+// check for reply:
+x.onreadystatechange = function() {
+    if (x.readyState === 4) {
+        delete x.onreadystatechange;
+        var p = d.createElement('pre'),
+            c = d.createElement('code'),
+            s = p.style;
+        p.appendChild(c);
+        c.textContent = x.responseText;
+
+        // &lt;pre&gt; style:
+        s.overflow = "auto";
+        s.position = "fixed";
+        s.top = "0";  s.bottom = "0";  s.left = "0";  s.right = "0";
+        s.zIndex = "99999";
+        s.margin = "0";
+        s.background = "#fff";
+
+        // &lt;code&gt; style:
+        s = c.style;
+        s.display = "block";
+        s.padding = "12px";
+        b.appendChild(p);
+
+        // load prettify.js:
+        p.className = "prettyprint";
+        var j = d.createElement("script");
+        j.src = "http://cdnjs.cloudflare.com/ajax/libs/prettify/188.0.0/prettify.js";
+        b.appendChild(j);
+
+        // load prettify.css:
+        var l = d.createElement("link");
+        l.setAttribute("rel","stylesheet");
+        l.href = "http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css";
+        d.head.appendChild(l);
+        setTimeout("prettyPrint()",1000);
+    }
+};
+
+// send ajax request:
+x.send();
+})();​</code></pre>
+			<a href="javascript:(function(){var d=document,b=d.body,x=new XMLHttpRequest();x.open('GET',d.URL,true);x.onreadystatechange=function(){if(x.readyState===4){delete x.onreadystatechange;var p=d.createElement('pre'),c=d.createElement('code'),s=p.style;p.appendChild(c);c.textContent=x.responseText;s.overflow='auto';s.position='fixed';s.top='0';s.bottom='0';s.left='0';s.right='0';s.zIndex='99999';s.margin='0';s.background='#fff';s=c.style;s.display='block';s.padding='12px';b.appendChild(p);p.className='prettyprint';var j=d.createElement('script');j.src='http://cdnjs.cloudflare.com/ajax/libs/prettify/188.0.0/prettify.js';b.appendChild(j);var l=d.createElement('link');l.setAttribute('rel','stylesheet');l.href='http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css';d.head.appendChild(l);setTimeout('prettyPrint()',1000)}};x.send()})();">Bookmarklet</a> | <a href="http://jsfiddle.net/Daniel_Hug/y55kv/11/show/light/" target="demo-frame">Demo</a>
+		</article>
+
+		<article class="HTML5 Javascript">
+			<h2>HTML5 input placeholder polyfill</h2>
+			<section>
+				<h3>HTML</h3>
+				<pre><code class="language-markup">&lt;input type="search" id="searchfield" placeholder="Search..."&gt;</code></pre>
+			</section>
+			<section>
+				<h3>CSS</h3>
+			<pre><code class="language-javascript">// input placeholder polyfill (replace "searchfield" with id of input element):
+(function(p,d){if(!(p in d.createElement("input"))){var e=d.getElementById("searchfield"),t=e.getAttribute(p);window.onload=e.onblur=(function(){if(!e.value.length){e.value=t;e.className=p}});e.onfocus=(function(){if(e.value===t){e.className=e.value=""}})}})("placeholder",document);</code></pre>
+			</section>
+			<section>
+				<h3>JS</h3>
+				<section>
+					<h4>Minified</h4>
+					<pre><code class="language-javascript">// input placeholder polyfill (replace "searchfield" with id of input element):
+(function(p,d){if(!(p in d.createElement("input"))){var e=d.getElementById("searchfield"),t=e.getAttribute(p);window.onload=e.onblur=(function(){if(!e.value.length){e.value=t;e.className=p}});e.onfocus=(function(){if(e.value===t){e.className=e.value=""}})}})("placeholder",document);</code></pre>
+				</section>
+				<section>
+					<h4>Maxified</h4>
+					<pre><code class="language-javascript">// input placeholder polyfill:
+(function(p,d) {
+	if (!(p in d.createElement("input"))) {
+
+		// replace "searchfield" with id of input element:
+		var e = d.getElementById("searchfield"),
+			t = e.getAttribute(p);
+
+		window.onload = e.onblur = (function() {
+			if (!e.value.length) {
+				e.value = t;
+				e.className = p;
+			}
+		});
+
+		e.onfocus = (function() {
+			if (e.value === t) {
+				e.className = e.value = "";
+			}
+		});
+
+	}
+})("placeholder",document);</code></pre>
+				</section>
+			</section>
+			<a href="http://jsbin.com/awigep/4/edit#preview" target="demo-frame">Demo</a>
+		</article>
+
+		<article class="Javascript">
+			<h2>Optimized Google Analytics tracking code</h2>
+			<pre><code class="language-javascript">&lt;script&gt; // Google Analytics:
+	var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
+	(function(d){var g=d.createElement('script');
+	g.src='//google-analytics.com/ga.js';
+	d.body.appendChild(g)}(document));
+&lt;/script&gt;</code></pre>
+
+			<p>Used in the <a href="https://github.com/h5bp/html5-boilerplate/blob/master/index.html">HTML5 boilerplate</a>. <strong><br>Article:</strong> <a href="http://mathiasbynens.be/notes/async-analytics-snippet">http://mathiasbynens.be/notes/async-analytics-snippet</a></p>
+		</article>
+
+		<article class="HTML5">
+			<h2>Basic HTML5 "boilerplate" / starting template</h2>
+			<pre><code class="language-markup">&lt;!doctype html&gt;
+&lt;html&gt;
+&lt;head&gt;
+	&lt;meta charset="utf-8"&gt;
+	&lt;meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"&gt;
+	&lt;title&gt;&lt;/title&gt;
+	&lt;meta name="viewport" content="initial-scale=1"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+		</article>
+
+		<article class="HTML5 CSS">
+			<h2>HTML viewport meta tag</h2>
+			<pre><code class="language-markup">&lt;meta name="viewport" content="initial-scale=1"&gt;</code></pre>
+			<p>Be Responsive!</p>
+		</article>
+
+		<article class="Javascript CSS">
+			<h2>jQuery-like CSS selectors in Javascript</h2>
+			<pre><code class="language-javascript">// Array-like object to Array:
+function toArray(o) {
+	return [].slice.call(o);
+}
+
+// Get elements by CSS selector
+function $$(selector, scopeEl) {
+	return toArray((scopeEl || document).querySelectorAll(selector));
+}
+function $(selector, scopeEl) {
+	return (scopeEl || document).querySelector(selector);
+}</code></pre>
+			<h3>How To</h3>
+			<p>Use like this:</p>
+			<pre><code class="language-javascript">
+function on(obj, event, callback) {
+	if (Array.isArray(obj)) {
+		array.forEach(function(item) {
+			on(item, event, callback);
+		});
+	} else {
+		obj.addEventListener(event, callback);
+	}
+};
+
+var modalEls = $$('.modal');
+var modalTriggers = $$('.modal-trigger');
+on(modalTriggers, 'click', function() {
+		modalEl.classList.add('is-hidden');
+});
+modalEls.forEach(function (modalEl) {
+	$('.close-btn', modalEl).addEventListener('click', function() {
+		modalEl.classList.add('is-hidden');
+	});
+});</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>CSS3 <code>tab-size</code> polyfill</h2>
+
+			<h3>JS</h3>
+			<pre><code class="language-javascript">// tab-size polyfill
+var codeElements = document.getElementsByTagName('code'),
+codeElementCount = codeElements.length,
+e = document.createElement('i');
+
+if(e.style.tabSize !== '' &amp;&amp; e.style.mozTabSize !== '' &amp;&amp; e.style.oTabSize !== '') {
+	for(var i = 0; i &lt; codeElementCount; i++) {
+		codeElements[i].innerHTML = codeElements[i].innerHTML.replace(/\t/g,'&lt;span class="tab"&gt;	&lt;/span&gt;');
+	}
+}</code></pre>
+
+<h3>CSS</h3>
+<pre><code class="language-css">.tab {
+	width: 40px; /* Adjust according to font-size */
+	display: inline-block;
+	overflow: hidden;
+}</code></pre>
+		</article>
+
+		<article class="Javascript CSS">
+			<h2>Feature detection</h2>
+			<h3>Minified:</h3>
+			<pre><code class="language-javascript">(function(h,f){h.className='js';ok=function(p,e,c){var c=c||p;e&amp;&amp;!f[c]&amp;&amp;(h.className+=' '+((f[c]=p in document.createElement(e))?c:'no-'+c));return f[c]}})(document.documentElement,{});</code></pre>
+			<h3>Maxified:</h3>
+			<pre><code class="language-javascript">// feature detection:
+(function(h,f) {
+	h.className = 'js';
+	ok = function(p,e,c) {
+		var c = c || p;
+		e &amp;&amp; !f[c] &amp;&amp; (h.className += ' ' + ((f[c] = p in document.createElement(e)) ? c : 'no-' + c));
+		return f[c];
+	};
+})(document.documentElement, {});</code></pre>
+			<h3>How To</h3>
+			<p>Use it like this:</p>
+			<pre><code class="language-javascript">if( !ok('placeholder','textarea','textareaPlaceholder') ) {
+	// textarea placeholder polyfill
+
+	if( !ok('placeholder','input','inputPlaceholder') ) {
+		// input placeholder polyfill
+	}
+}</code></pre>
+<p>After each <code>ok()</code> function is evaluated, a class will be added to the <code class="language-markup">&lt;html&gt;</code> element with the value of the <code>ok()</code> function's third argument (prefixed with 'no-' if not supported). You can then add feature specific CSS styles:</p>
+<pre><code class="language-css">.inputPlaceholder input[placeholder] + label {
+	display: none;
+}</code></pre>
+</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>A localized &amp; renamed set of global javascript variables</h2>
+			<pre><code class="language-javascript">// a few baseline variables:
+var w = window,            // window object
+    d = w.document,        // document object
+    b = d.body,            // &lt;body&gt; element
+    h = d.documentElement; // &lt;html&gt; element</code></pre>
+			<h3>Notes:</h3>
+			<p>Place the above script at the start of your JavaScript file, and start coding beautifully:</p>
+			<pre><code class="language-javascript">var s = d.createElement('script');
+s.src = "/js/jQuery.min.js";
+b.appendChild(s);
+h.className += " jQuery"</code></pre>
+		</article>
+
+		<article class="CSS3">
+			<h2>CSS Reset</h2>
+			<pre><code class="language-css">
+/* CSS reset
+-------------------------------------------*/
+
+header, footer, article, aside, hgroup, nav, menu, section, figure, figcaption, details, summary {
+	display: block;
+}
+
+* {
+	color: inherit;
+	-webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+}
+
+img, fieldset, legend { border: 0 }
+
+img {
+	max-width: 100%;
+	-ms-interpolation-mode: bicubic;
+}
+
+a { text-decoration: none }
+
+p a, article a, blockquote a, .type a {
+	color: #3be;
+	padding-bottom: 1px;
+	border-bottom: 1px solid #ccc;
+	border-bottom: 1px solid rgba(0,0,0,.2);
+}
+
+p a:hover, article a:hover, blockquote a:hover, .type a:hover {
+	border-bottom: 1px solid;
+}
+
+p a:focus, article a:focus, blockquote a:focus, .type a:focus {
+	border-bottom: 7px solid;
+	outline: 0;
+	position: relative;
+	z-index: 99999;
+}
+
+p a:active, article a:active, blockquote a:active, .type a:active {
+	color: #1096c6;
+}
+
+nav ul,
+nav ol,
+ul.reset,
+ol.reset {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.horz {
+	font-size: .000000001em;
+}
+
+.horz > * {
+	font-size: 1000000000em;
+	display: inline-block;
+	vertical-align: top;
+	zoom: 1;
+	*display: inline;
+}
+
+fieldset, legend, [type=checkbox], [type=radio] { padding: 0 }
+
+figure, fieldset, form, input, button, select, textarea {
+	margin: 0;
+}
+
+label,
+button,
+input[type=submit],
+input[type=button],
+input[type=reset],
+input[type=checkbox],
+input[type=radio] {
+	cursor: pointer;
+}
+
+::-webkit-file-upload-button { cursor: pointer }
+
+[type="search"] {
+	-webkit-appearance: textfield;
+}
+
+textarea {
+	overflow: auto;
+	resize: vertical
+}
+
+html, body { min-height: 100% }
+
+body {
+	width: 100%;
+	display: inline-block;
+	margin: 0;
+	overflow-y: scroll;
+	color: #222;
+	font: 1em/1.4 sans-serif;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+}
+
+
+
+
+/* Generic styles
+-------------------------------------------*/
+
+selector {
+	property: value;
+}
+
+
+
+
+/* Specific styles
+-------------------------------------------*/
+
+selector {
+	property: value;
+}
+
+
+
+
+/* Print styles
+-------------------------------------------*/
+
+@media print{[role=banner],nav,form,video,.print-hide{display:none!important}a:after{content:" (" attr(href) ")"}abbr:after{content:" (" attr(title) ")"}}
+</code></pre>
+			<h3>Notes:</h3>
+			<p>My own CSS reset variation</p>
+		</article>
+
+		<article class="Javascript">
+			<h2>Javascript Stopwatch</h2>
+			<p><a href="http://jsbin.com/uhicef/2/edit" target="demo-frame">Demo</a></p>
+		</article>
+
+		<article class="Javascript CSS3">
+			<h2>Javascript Floating share widget with fixed/absolute positioning</h2>
+			<pre><code class="language-javascript">&lt;aside class="floater"&gt;&lt;/aside&gt;
+
+&lt;p&gt;Lorem ipsum dolor sit amet...&lt;/p&gt;
+
+&lt;style&gt;
+aside {
+    width: 80px;
+    height: 160px;
+    border: 1px solid #222;
+    position: absolute;
+    margin-top: 40px; /* Change this value */
+    top: 200px;       /* and this value, to your liking. */
+    left: 40px;
+    background: #fff;
+}
+
+.floating {
+    position: fixed;
+    top: 0;
+}
+&lt;/style&gt;
+
+&lt;script&gt;
+floater = document.getElementsByClassName('floater')[0];
+buffer = parseInt(getComputedStyle(floater).getPropertyValue('top'));
+
+function float() {
+    if (document.body.scrollTop &gt;= buffer) floater.classList.add('floating');
+    else floater.classList.remove('floating');
+}
+
+document.onload   = float;
+document.onscroll = float;
+&lt;/script&gt;​</code></pre>
+			<h3>Notes:</h3>
+			<p>The element with <code>class="floater"</code> will hover on the page.</p>
+			<a href="http://jsfiddle.net/Daniel_Hug/3wsFr/show/light" target="demo-frame">Demo</a>
+		</article>
+
+		<article class="Javascript">
+			<h2>Javascript Element multiplier for HTML filler</h2>
+			<h3>HTML</h3>
+			<pre><code class="language-markup">&lt;article data-multiply="5"&gt;
+    &lt;h2&gt;This is an amazing article heading.&lt;/h2&gt;
+    &lt;p&gt;This is an amazing article.&lt;/p&gt;
+    &lt;p&gt;This is an amazing article.&lt;/p&gt;
+&lt;/article&gt;</code></pre>
+
+			<h3>JS</h3>
+			<pre><code class="language-javascript">fill = document.querySelectorAll('[data-multiply]');
+
+for(var i = fill.length; i--;) {
+	var f = document.createDocumentFragment();
+	for(var a = fill[i].getAttribute('data-multiply') - 1; a--;) {
+		f.appendChild(fill[i].cloneNode(true));
+	}
+	fill[i].parentNode.insertBefore(f,fill[i])
+}</code></pre>
+			<h3>Notes:</h3>
+			<p>This will replace the current article with five identical articles. You can also just include this script tag on your page:</p>
+			<pre><code class="language-markup">&lt;script src="<a href="http://f.cl.ly/items/2w2j1s2f3G1q2Q400X2X/m.js">http://f.cl.ly/items/2w2j1s2f3G1q2Q400X2X/m.js</a>"&gt;&lt;/script&gt;</code></pre>
+			<a href="http://jsfiddle.net/Daniel_Hug/baR2B/show/light" target="demo-frame">Demo</a>
+		</article>
+
+		<article class="Javascript HTML5">
+			<h2>Cross-browser Maxlength polyfill for textareas</h2>
+			<h3>HTML</h3>
+			<pre><code class="language-markup">&lt;textarea maxlength="50"&gt;This textarea has a character limit of 50.&lt;/textarea&gt;</code></pre>
+
+<h3>JS</h3>
+<pre><code class="language-javascript">var textareas = document.getElementsByTagName('textarea');
+
+for (var i = textareas.length; i--;) {
+	if (textareas[i].getAttribute('maxlength') &amp;&amp; !textareas[i].maxlength) {
+		var max = textareas[i].getAttribute('maxlength');
+		textareas[i].onkeypress = function(event) {
+			var k = event ? event.which : window.event.keyCode;
+			if(this.value.length &gt;= max) if(k&gt;46 &amp;&amp; k&lt;112 || k&gt;123) return false;
+		}
+	}
+}</code></pre>
+			<h3>Notes:</h3>
+			<p>This method uses the browsers default impementation of the HTML5 <code>maxlength</code> attribute if it exists, and falls back to an unubtrusive javascript solution in older browsers.</p>
+			<a href="http://jsfiddle.net/Daniel_Hug/5hCAp/show/light" target="demo-frame">Demo</a>
+		</article>
+
+		<article class="Javascript">
+			<h2>Cross-browser Javascript <code>document.getElementsByClassName</code> alternative for IE</h2>
+			<pre><code class="language-javascript">function getElementsByClassName(node, classname) {
+	var a = [];
+	var re = new RegExp('(^| )'+classname+'( |$)');
+	var els = node.getElementsByTagName("*");
+	for (var i=0,j=els.length; i&lt;j; i++)
+		if(re.test(els[i].className))a.push(els[i]);
+	return a;
+}</code></pre>
+			<h3>Notes:</h3>
+			<p>I have absolutely no idea how this works, but this function replaces <code>document.getElementsByClassName</code> because of lack of support in IE8 and below.</p>
+		</article>
+
+		<article class="HTML5 Javascript">
+			<h2>Number-only input with Javascript &amp; HTML5</h2>
+			<h3>HTML</h3>
+			<pre><code class="language-markup">&lt;input type="number"&gt;</code></pre>
+
+			<h3>CSS</h3>
+
+<pre><code class="language-javascript">inputElements = document.getElementsByTagName('input');
+
+for (var i = inputElements.length; i--;) {
+	if(inputElements[i].getAttribute('type') == 'number') {
+		inputElements[i].onkeypress = function(e) {
+			var k = event ? event.which : window.event.keyCode;
+			return ( k &gt; 47 &amp;&amp; k &lt; 58 );
+		}
+	}
+}
+&lt;/script&gt;</code></pre>
+			<h3>Notes:</h3>
+			<p>This script disables non-number input on all <code class="language-markup">&lt;input type="number"&gt;</code> elements.</p>
+	    </article>
+
+		<article class="CSS3">
+			<h2>Upgrade to the old <a href="http://en.wikipedia.org/wiki/Internet_Explorer_box_model_bug">internet explorer box-model</a> using the CSS3 <code>box-sizing</code> property</h2>
+			<pre><code class="language-css">* { -moz-box-sizing: border-box; box-sizing: border-box }</code></pre>
+			<h3>Notes:</h3>
+			<p>This makes page layout a piece of pie. :)</p>
+		</article>
+
+		<article class="CSS3">
+			<h2>Clearfix CSS "hack" for clearing floats</h2>
+
+			<h3>CSS</h3>
+			<pre><code class="language-css">/* Clearfix
+---------------------------------------*/
+
+.cf:before,
+.cf:after {
+	content:"";
+	display:table;
+}
+.cf:after { clear:both }
+.cf { *zoom:1 }</code></pre>
+
+			<h3>LESS</h3>
+			<pre><code class="language-css">/* Clearfix */
+.cf {
+	*zoom: 1;
+
+	&amp;:before,
+	&amp;:after {
+		content:"";
+		display:table;
+	}
+
+	&amp;:after { clear:both }
+}</code></pre>
+			<h3>Notes:</h3>
+			<p>See: <a href="http://nicolasgallagher.com/micro-clearfix-hack/">http://nicolasgallagher.com/micro-clearfix-hack/</a></p>
+		</article>
+
+		<article class="HTML5">
+			<h2>Upgrade message for users with old versions of Internet Explorer</h2>
+			<pre><code class="language-markup">&lt;!-- For old IE users: --&gt;
+&lt;!--[if lt IE 8]&gt;&lt;style&gt;html,body{background:#fff;font:32px Georgia;margin:40px}body *{display:none}#bR,*+html #iE7,* html #ie6{display:inline}&lt;/style&gt;Your browser (Internet Explorer &lt;p id=iE7&gt;7) was made in 2006&lt;/p&gt;&lt;p id=iE6&gt;6) was made in 2001&lt;/p&gt;. A lot has changed on the web since then. Please &lt;a id=bR href=http://browsehappy.com&gt;upgrade your browser&lt;/a&gt; to view this webpage.&lt;![endif]--&gt;</code></pre>
+			<h3>Notes:</h3>
+			<p>Place this just before the closing <code class="language-markup">&lt;/body&gt;</code> tag.</p>
+			<p>Also, you may want to consider something a little less harsh. :)</p>
+	    </article>
+
+		<article class="HTML5">
+			<h2>HTML meta description tag</h2>
+			<pre><code class="language-markup">&lt;meta name="description" content="Description goes here."&gt;</code></pre>
+			<h3>Notes:</h3>
+			<p>This goes in the <code class="language-markup">&lt;head&gt;</code> of the document. The meta description will often be used in search engine results for that page.</p>
+	    </article>
+
+		<article class="Javascript">
+			<h2>Select text with Javascript</h2>
+			<pre><code class="language-javascript">codeElements = document.getElementsByTagName('code');
+
+for (var i = codeElements.length; i--;) {
+	codeElements[i].onclick = function() {
+		if (document.selection) {
+			var range = document.body.createTextRange();
+			range.moveToElementText(this);
+			range.select();
+		}
+		else if (window.getSelection) {
+			var range = document.createRange();
+			range.selectNode(this);
+			window.getSelection().addRange(range);
+		}
+	}
+}</code></pre>
+			<h3>Notes:</h3>
+			<p>This will select the text in the <code class="language-markup">&lt;code&gt;</code> element that the user clicks on.</p>
+			<p>For <code>textarea</code>s and <code>input</code> elements use this instead:</p>
+			<pre><code class="language-javascript">element.onclick = function() {
+    this.select();
+}</code></pre>
+		</article>
+
+		<article class="Javascript">
+			<h2>A better Javascript for loop</h2>
+			<pre><code class="language-javascript">for (var i = document.images.length; i--;) {
+	document.images[i].src = 'cat.png';
+}</code></pre>
+			<h3>Notes:</h3>
+			<p>This method is shorter, has a localized variable and caches the length value on the first run, instead of calculating it on every iteration. It also decrements instead of increments, so beware!</p>
+		</article>
+
+		<article class="HTML5">
+			<h2>HTML5 Shiv/Shim</h2>
+			<pre><code class="language-markup">&lt;!--[if lt IE 9]&gt;&lt;script src="//html5shiv.googlecode.com/svn/trunk/html5.js"&gt;&lt;/script&gt;&lt;![endif]--&gt;</code></pre>
+			<h3>Usage:</h3>
+			<p>Place in <code class="language-markup">&lt;head&gt;</code> tag. After CSS for best performance.</p>
+	    </article>
+
+		<article class="CSS3">
+			<h2>Style Text Selection with CSS3</h2>
+			<pre><code class="language-css">/* Change selection color<br>------------------------------------------------------------*/
+
+::-moz-selection { background: #000; color: #fff; text-shadow: none }
+     ::selection { background: #000; color: #fff; text-shadow: none }</code></pre>
+		</article>
+
+	</section>
+
+	<footer>
+		<small>You are free to use these tidbits for whatever you please. <span>:-)</span></small>
+	</footer>
+
+	<button class="back-to-top">Back to top</button>
+
+	<div id="demo-box"><iframe name="demo-frame"></iframe><a href="#demo-box">&times;</a></div>
+
+	<!-- Scripts -->
+	<script src="libs/prism/prism.js"></script>
+	<script src="global.js"></script>
+
+</body>
+</html>
